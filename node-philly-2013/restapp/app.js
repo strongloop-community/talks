@@ -9,6 +9,9 @@ var express = require('express')
 
 var app = express();
 
+// Expose the app to our test runner
+module.exports = app;
+
 app.configure(function(){
   app.set('port', process.env.PORT || 3000);
   app.set('views', __dirname + '/views');

@@ -3,7 +3,10 @@
   "description": "restapp",
   "private": true,
   "version": "1.0.0",
-  "scripts": { "start": "node app" },
+  "scripts": {
+    "start": "node app",
+    "test": "./node_modules/mocha/bin/mocha --timeout 30000 --reporter spec test/*.js --noAuth --noSetup"
+  },
   
   "dependencies": {
     "express": "latest",
