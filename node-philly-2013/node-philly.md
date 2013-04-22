@@ -74,6 +74,9 @@ As you can see it uses the [mocha testing framework](http://visionmedia.github.i
 ~/Work/serverapp $ npm install mocha
 ```
 
+Don't run `npm test` quite yet though, we need to get Mongo up and running first.
+
+
 ### Get MongoDB up and running
 
 Earlier we downloaded [MongoDB](http://www.mongodb.org/downloads) and installed it. Now we are going to start it up and configure it for use in development and production.
