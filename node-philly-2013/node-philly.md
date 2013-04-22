@@ -141,7 +141,7 @@ Now let's run `npm test` again to ensure our Mongo instance is set up properly. 
 Implementing REST API Routes
 -------
 
-Now we are going to expose our Mongo data to the rest of the world via a REST API. Our example app already has the ingredients to make this possible. The routes we are exposing to the rest of the world exist in `routes/resource.js`. For example:
+Now we are going to expose our Mongo data to the rest of the world via a REST API. Our example app already has the ingredients to make this possible. The routes we are exposing to the rest of the world exist in `routes/resource.js`
 
 ```javascript
 /**
@@ -189,3 +189,60 @@ View API with Swagger
 
 Authentication with Passport and oAuth
 -------
+
+[Passport](https://github.com/jaredhanson/passport) bills itself as a general-purpose authentication framework. Its sole purpose is to authenticate requests.
+
+To use Passport with our Express-based application, configure it with the required `passport.initialize()` middleware and `passport.session()` middleware for persistent login sessions:
+
+```javascript
+app.use(passport.initialize());
+app.use(passport.session());
+```
+
+And of course install it with `npm install passport`
+
+Passport comes with a lot of authenatication strategies, evertyhing from Twitter, Google and GitHub. For this app we're going to use Twitter's auth, that way we can link to an author's twitter account for each post they write. Install it with `npm install passport-twitter`.
+
+### Integrating the Twitter auth strategy with passport
+
+This auth strategy authenticates users using a Twitter account and oAuth tokens. It requires a `verify` callback, which receives the access token and corresponding secret as arguments, as well as `profile` which contains the authenticated user's Twitter profile. The `verify` callback must call `done` providing a user to complete authentication.
+
+In order to identify our app to Twitter, we need to specify the consumer key,
+consumer secret, and callback URL within `options`.  The consumer key and secret
+are obtained by [creating an application](https://dev.twitter.com/apps) at
+Twitter's [developer](https://dev.twitter.com/) site.
+
+```javascript
+passport.use(new TwitterStrategy({
+    consumerKey: TWITTER_CONSUMER_KEY,
+    consumerSecret: TWITTER_CONSUMER_SECRET,
+    callbackURL: "http://127.0.0.1:3000/auth/twitter/callback"
+  },
+  function(token, tokenSecret, profile, done) {
+    User.findOrCreate({ twitterId: profile.id }, function (err, user) {
+      return done(err, user);
+    });
+  }
+));
+```
+
+#### Authenticate Requests
+
+Use `passport.authenticate()`, specifying the `'twitter'` strategy, to
+authenticate requests.
+
+For example, as route middleware in an [Express](http://expressjs.com/)
+application:
+
+```javascript
+app.get('/auth/twitter',
+  passport.authenticate('twitter'));
+
+app.get('/auth/twitter/callback', 
+  passport.authenticate('twitter', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect home.
+    res.redirect('/');
+  }
+);
+```
