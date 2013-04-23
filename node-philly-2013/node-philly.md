@@ -1,7 +1,7 @@
 RESTful API server with Node.js and MongoDB
 -------
 
-In this workshop you will build an app that relies on REST data services powered by Node.js and MongoDB.
+In this workshop you will build a Node.js app that exposes data from MongoDB over a REST interface.
 
 The use-case for Node.js as an API server is very compelling. We are seeing a lot of companies use Node.js as a sort of "glue" for their existing services and data. One common use-case is to use Node.js as the API server for mobile devices. The application we will build today can be multipurposed for a number of uses, but our dummy example application will be a very bare-bones blog.
 
@@ -18,7 +18,6 @@ What this Workshop Covers
 - Setting up MongoDB
 - Injecting data into Mongo
 - Implementing API routes
-- View API with Swagger
 - Authentication with Passport and oAuth
 
 
@@ -108,7 +107,7 @@ In package.json, we put a script so that you can use `npm test` to run the test 
 "scripts": {
   "start": "node app",
   "test": "./node_modules/mocha/bin/mocha --timeout 30000 --reporter spec test/*.js --noAuth --noSetup"
-},
+}
 ```
 
 Now let's run `npm test` again to ensure our Mongo instance is set up properly. We should see a successful pass of the test data. Let's look inside our mongo instance to see that the data is actually there.
@@ -178,7 +177,7 @@ exports.list = function(mongoose) {
 
 As we can see a few lines in, we get the mongoModel based on the resource being requested: `mongoModel = mongo.model(req.params.resource);`
 
-Mongoose knows about our ":resource" routes because we sent our mongoose object off to the different models in app.js.
+Previously in app.js, we loaded up the different Mongo models in our "models" folder and passed them the connection object to our MongoDB instance.
 
 ```javascript
 options.mongoose = mongo.mongoose;
@@ -186,7 +185,7 @@ require('./models/user')(options);
 require('./models/blog')(options);
 ```
 
-In "user.js" for instance, it registers its schema and route with mongoose:
+Then in those different models files we have a line of code where the schema is registered with Mongoose. This is in "user.js" for instance:
 
 ```javascript
 var User = mongoose.model("users", UserSchema);
@@ -204,12 +203,6 @@ So to recap:
 ### Adding more models and routes
 
 Expanding on this existing infrastructure merely requires the creation of a database schema and registering that schema with Mongoose. Simply look at how this is done already in models/blog.js or models/user.js and pass mongoose off to your new model file from app.js.
-
-View API with Swagger
--------
-
-Swagger gives us a convenient web-based interface to interact with and test our API. There is already a connector for use with express applications, we just have to embed it into our `app.js` file and give Swagger some information about our schema.
-
 
 Authentication with Passport and oAuth
 -------
