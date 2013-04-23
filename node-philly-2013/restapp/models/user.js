@@ -32,9 +32,11 @@ module.exports = function(options) {
     },
     created_at : {
       type : Date
+      , default: new Date()
     },
     modified_at : {
       type : Date
+      , default: new Date()
     }
   });
 

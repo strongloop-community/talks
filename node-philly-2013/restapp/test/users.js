@@ -35,6 +35,32 @@ describe('rest', function () {
                     done();
                 });
         });
+    });
 
+    var id;
+    describe('POST /rest/users', function () {
+        it('should create a new user and return it', function (done) {
+            request(app)
+                .post('/rest/users')
+                .set('Content-Type', 'application/json')
+                .send(json({
+                    username: 'mattpardee',
+                    first_name: 'Matt',
+                    last_name: 'Pardee',
+                    email: 'matt@strongloop.com',
+                    password: 'strongstrong'
+            })).expect(200).end(function (err, res) {
+                    if (err)
+                        console.log('ERROR', arguments);
+
+                    res.should.have.property('body');
+                    res.body.should.have.property('username', 'mattpardee');
+                    res.body.should.have.property('first_name', 'Matt');
+                    res.body.should.have.property('last_name', 'Pardee');
+                    res.body.should.have.property('email', 'matt@strongloop.com');
+                    id = res.body._id;
+                    done();
+                });
+        });
     });
 });

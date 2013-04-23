@@ -1,8 +1,9 @@
-REST API server with Node.js and MongoDB
+RESTful API server with Node.js and MongoDB
 -------
 
-In this workshop you will build an app that relies on REST data services powered by Node.js and MongoDB. This can be multipurposed for a number of uses, but our dummy example application will be a blog.
+In this workshop you will build an app that relies on REST data services powered by Node.js and MongoDB.
 
+The use-case for Node.js as an API server is very compelling. We are seeing a lot of companies use Node.js as a sort of "glue" for their existing services and data. One common use-case is to use Node.js as the API server for mobile devices. The application we will build today can be multipurposed for a number of uses, but our dummy example application will be a very bare-bones blog.
 
 ## Preparation
 
@@ -13,25 +14,34 @@ Download the [StrongLoop Node.js distro](http://strongloop.com/products) for you
 What this Workshop Covers
 -------
 
-- Scaffolding an Express web server
-- Setting up MongoDB and data
-- Implementing REST API routes
+- The Express web server
+- Setting up MongoDB
+- Injecting data into Mongo
+- Implementing API routes
 - View API with Swagger
 - Authentication with Passport and oAuth
 
 
-Scaffolding an Express web server
+The Express web server
 -------
 
-The StrongLoop Node distro ships with a command-line utility called `slnode` that makes it super simple to scaffold boilerplate applications, modules, CLI utilities, etc.
-
-Scaffolding our server is as simple as running the following command. The "m" and "r" flags stand for "mongoose/mongo" and "REST", respectively. Including them means `slnode` will automatically add the mongoose dependency and create some API routes for us to play with.
+The StrongLoop Node distro ships with a command-line utility called `slnode` that makes it super simple to scaffold boilerplate applications, modules, CLI utilities, etc. The demo code for this application used the following command to scaffold some boilerplate code:
 
 ```bash
 $ slnode create web restapp -m -r
 ```
 
-This operation has created a fully-baked express application. Run `slnode app` to fire it up:
+From there, an entire application was built. We are going to start from a higher-level than the `slnode create` utility provides, but it is useful to know for future reference as a "clean slate" application to start from. For this demo clone the following code locally:
+
+```bash
+$ git clone git://github.com/mattpardee/node-philly-2013-demo.git restapp
+$ cd restapp
+$ slnode install
+```
+
+_Note that we are running `slnode install` because it uses the versions of community packages that StrongLoop supports; if you decide to go into production you can depend on StrongLoop's professional support channels if you ever need them._
+
+We now have a fully-baked express application. Run `slnode app` to fire it up:
 
 ![](./restapp-assets/restapp-first-fireup.png)
 
@@ -47,63 +57,10 @@ Setting up MongoDB
 
 With our application created we need to run Mongo and put some sample data into a db.
 
-A convenient technique for doing this is to create a script that will run when `npm test` is run from the command-line. The test will confirm the database and application are setup properly, and get developers up and running quickly.
-
-We will create a new folder "test", a new file "blogs.js" and paste in [this test code](https://github.com/strongloop/sample-blog/blob/master/test/routes-mocha.js).
-
-```bash
-~/Work/serverapp $ mkdir test && cd test
-~/Work/serverapp/test $ vi blogs.js
-```
-
-In addition we have some test code for users. Place this in `test/users.js`
-
-```javascript
-// [placeholder]
-```
-
-
-#### Missing packages
-
-To run the tests, we need the following packages in the restapp root directory. Install them with `npm install [package]`
-
-- [mocha](http://visionmedia.github.io/mocha/)
-- should
-- supertest
-- underscore
-
-
-#### Expose our application to the test runner
-
-The test runner will use the express server we have already created. To expose the express app to the test runner, put the following in ./app.js right below `var app = express();`
-
-```javascript
-var app = express();
-
-// Expose the app to our test runner
-module.exports = app;
-```
-
-
-#### Test script for `npm test`
-
-In package.json, create a script so that you can use `npm test` to run the test cases. We already have a script for starting the app, so add the "test" script to that section.
-
-```javascript
-"scripts": {
-  "start": "node app",
-  "test": "./node_modules/mocha/bin/mocha --timeout 30000 --reporter spec test/*-mocha.js --noAuth --noSetup"
-},
-```
-
-If you run `npm test` right now, the tests will fail because we need to get Mongo up and running.
-
 
 ### Get MongoDB up and running
 
 Earlier we downloaded [MongoDB](http://www.mongodb.org/downloads) and installed it. Now we are going to start it up and configure it for use in development and production.
-
-(fill in content on setting up the database, with naming it, auth, etc)
 
 
 ### Update the database config for our app
@@ -128,17 +85,38 @@ exports.mongodb = {
 
 This is used by the mongoose connection code in db/mongo-store.js.
 
-(Mike any details they should update for development and production?)
 
+Injecting Data into Mongo
+-------
 
-### Inject the Sample Data
+A convenient technique for doing this is to create a script that will run when `npm test` is run from the command-line. The test will confirm the database and application are setup properly, and get developers up and running quickly.
 
-Now let's run `npm test` again to ensure our Mongo instance is set up properly. We should see a successful pass of the test data from both "test/users.js" and "test/blogs.js". Let's look inside our mongo instance to see that the data is actually there.
+We have code in `test/alldata.js` that does the following:
+
+1. Starts up our application
+2. Connects to the database based on our configuration data
+3. Drops the database
+4. Runs CRUD operations on the database
+
+Yes, the code does **drop the database** but you can disable this and any test cases that may be impacted by existing data.
+
+#### Test script for `npm test`
+
+In package.json, we put a script so that you can use `npm test` to run the test cases:
+
+```javascript
+"scripts": {
+  "start": "node app",
+  "test": "./node_modules/mocha/bin/mocha --timeout 30000 --reporter spec test/*.js --noAuth --noSetup"
+},
+```
+
+Now let's run `npm test` again to ensure our Mongo instance is set up properly. We should see a successful pass of the test data. Let's look inside our mongo instance to see that the data is actually there.
 
 [placeholder]
 
 
-Implementing REST API Routes
+Implementing API Routes
 -------
 
 Now we are going to expose our Mongo data to the rest of the world via a REST API. Our example app already has the ingredients to make this possible. The routes we are exposing to the rest of the world exist in `routes/resource.js`
@@ -170,21 +148,67 @@ exports.setup = function(app, options) {
 }
 ```
 
-### Our first route
+As you can see we have resources like '/:resource' which are word-agnostic. How does the app know to route, for example, '/rest/users' to then pull up all the user data?
 
+### How an API call gets routed
 
+Taking a simple "listing" example: in `routes/resource.js` there exists a method "list":
 
-#### JSON or rendered page?
+```javascript
+exports.list = function(mongoose) {
+  var mongo = mongoose;
+  return function(req, res, next) {
+    var mongoModel = null; 
+    try {
+      mongoModel = mongo.model(req.params.resource);
 
-If a client is accessing some API route from from our server, we can return the data as JSON or a rendered webpage. Both situations are useful, particularly with slow mobile connections. We may want to render the webpage upon first access and then allow the client javascript to make AJAX requests to specific resources, only updating the parts of the webpage that need to be updated.
+      /// more code
+    } catch(err) {
+      console.log(err);
+    } 
+    if(!mongoModel) {
+      next();
+      return;
+    }
 
+    // Get the list from mongo
+ }
+});
+```
 
+As we can see a few lines in, we get the mongoModel based on the resource being requested: `mongoModel = mongo.model(req.params.resource);`
 
+Mongoose knows about our ":resource" routes because we sent our mongoose object off to the different models in app.js.
+
+```javascript
+options.mongoose = mongo.mongoose;
+require('./models/user')(options);
+require('./models/blog')(options);
+```
+
+In "user.js" for instance, it registers its schema and route with mongoose:
+
+```javascript
+var User = mongoose.model("users", UserSchema);
+```
+
+So to recap:
+
+1. A user accesses "/rest/users"
+2. The `exports.list` method gets called
+3. Code inside `exports.list` asks mongoose for the model
+4. Mongoose/Mongo looks in its model list, sees if it finds "users"
+5. The model is found, and the data is queried
+6. Results and returned to the client
+
+### Adding more models and routes
+
+Expanding on this existing infrastructure merely requires the creation of a database schema and registering that schema with Mongoose. Simply look at how this is done already in models/blog.js or models/user.js and pass mongoose off to your new model file from app.js.
 
 View API with Swagger
 -------
 
-
+Swagger gives us a convenient web-based interface to interact with and test our API. There is already a connector for use with express applications, we just have to embed it into our `app.js` file and give Swagger some information about our schema.
 
 
 Authentication with Passport and oAuth
@@ -201,7 +225,7 @@ app.use(passport.session());
 
 And of course install it with `npm install passport`
 
-Passport comes with a lot of authenatication strategies, evertyhing from Twitter, Google and GitHub. For this app we're going to use Twitter's auth, that way we can link to an author's twitter account for each post they write. Install it with `npm install passport-twitter`.
+Passport comes with a lot of authenatication strategies, everything from Twitter, Google to GitHub. For this app we're going to use Twitter's auth, that way we can link to an author's twitter account for each post they write. Install it with `npm install passport-twitter`.
 
 ### Integrating the Twitter auth strategy with passport
 
